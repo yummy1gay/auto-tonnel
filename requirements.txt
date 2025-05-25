@@ -1,4 +1,4 @@
-tls-client
+cloudscraper
 Telethon
 pycryptodome
 beautifulsoup4
