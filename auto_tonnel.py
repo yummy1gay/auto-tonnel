@@ -1,4 +1,3 @@
-import tls_client
 from urllib.parse import unquote, urljoin
 
 from telethon import TelegramClient
@@ -8,6 +7,7 @@ from telethon.tl.types import InputBotAppShortName
 from Crypto import Random
 from Crypto.Cipher import AES
 from hashlib import md5
+import cloudscraper
 import base64
 
 import time
@@ -20,14 +20,14 @@ class AutoTonnel:
     def __init__(self, client: TelegramClient):
         self.client = client
         self.init_data = None
-        self.scraper = tls_client.Session(client_identifier="chrome_120", random_tls_extension_order=True)
+        self.scraper = cloudscraper.create_scraper()
         self.headers = {
             "accept": "*/*",
             "accept-encoding": "gzip, deflate, br, zstd",
             "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7,pl;q=0.6",
             "content-type": "application/json",
-            "origin": "https://tonnel-gift.vercel.app",
-            "referer": "https://tonnel-gift.vercel.app/",
+            "origin": "https://marketplace.tonnel.network",
+            "referer": "https://marketplace.tonnel.network",
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
@@ -36,8 +36,9 @@ class AutoTonnel:
         self.url = "https://gifts2.tonnel.network"
 
     def update_gifts(self):
-        url = "https://tonnel-gift.vercel.app/"
+        url = "https://marketplace.tonnel.network/"
         res = self.scraper.get(url)
+        print(res.status_code)
         if res.status_code != 200:
             return False
         
@@ -96,10 +97,9 @@ class AutoTonnel:
         url = web.url
         self.init_data = unquote(url.split('tgWebAppData=')[1].split('&tgWebAppVersion')[0])
 
-    async def get_gifts(self, limit=30, gift_name="Top Hat", backdrops=["ALL!"], models=["Pixel Perfect"], symbols=["ALL!"], asset="TON"):
+    async def get_gifts(self, limit=30, gift_name=["Spiced Wine", "Lunar Snake"], backdrops=["ALL!"], models=["ALL!"], symbols=["ALL!"], asset="TON"):
         if not self.init_data:
             await self.data()
-        
         try:
             with open('gifts.json', 'r', encoding='utf-8') as f:
                 gifts = json.load(f)
@@ -107,30 +107,28 @@ class AutoTonnel:
             self.update_gifts()
             with open('gifts.json', 'r', encoding='utf-8') as f:
                 gifts = json.load(f)
-        
-        if gift_name in gifts:
+        if gift_name:
             filters = {"backgrounds": backdrops, "models": models, "symbols": symbols}
-            
             for key, value in filters.items():
-                if key in gifts[gift_name] and value != ["ALL!"]:
-                    filters[key] = [f"{item} {gifts[gift_name][key][item]}" for item in value if item in gifts[gift_name][key]]
+                if value != ["ALL!"]:
+                    filters[key] = [f"{item} {gifts[gift_name[0]][key][item]}" for item in value if item in gifts[gift_name[0]][key]]
                 else:
                     filters[key] = []
-            
             backdrops, models, symbols = filters["backgrounds"], filters["models"], filters["symbols"]
-        
-        filter_payload = {"price": {"$exists": True}, "refunded": {"$ne": True},
-                          "buyer": {"$exists": False}, "export_at": {"$exists": True},
-                          "gift_name": gift_name, "asset": asset}
-        
+        if isinstance(gift_name, list):
+            filter_payload = {"price": {"$exists": True}, "refunded": {"$ne": True},
+                              "buyer": {"$exists": False}, "export_at": {"$exists": True},
+                              "gift_name": {"$in": gift_name}, "asset": asset}
+        else:
+            filter_payload = {"price": {"$exists": True}, "refunded": {"$ne": True},
+                              "buyer": {"$exists": False}, "export_at": {"$exists": True},
+                              "gift_name": gift_name, "asset": asset}
         filter_payload.update({field[:-1]: {"$in": values} for field, values in filters.items() if values})
-        
         payload = {"page": 1, "limit": limit,
-                   "sort": json.dumps({"price": 1, "gift_id": -1}), "filter": json.dumps(filter_payload),
+                   "sort": json.dumps({"price": 1, "gift_id": -1}),
+                   "filter": json.dumps(filter_payload),
                    "ref": 0, "price_range": None, "user_auth": self.init_data}
-        
         resp = self.scraper.post(f"{self.url}/api/pageGifts", json=payload, headers=self.headers)
-        
         return resp.json()
     
     async def get_info(self):
