@@ -139,7 +139,7 @@ class AutoTonnel:
 
         return resp.json()
     
-    async def buy_gift(self, gift_id, price, asset):
+    async def buy_gift(self, gift_id, price, asset, premarket=False):
         if not self.init_data:
             await self.data()
 
