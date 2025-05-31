@@ -23,7 +23,7 @@ class AutoTonnel:
         self.scraper = cloudscraper.create_scraper()
         self.headers = {
             "accept": "*/*",
-            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-encoding": "gzip",
             "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7,pl;q=0.6",
             "content-type": "application/json",
             "origin": "https://marketplace.tonnel.network",
@@ -31,7 +31,7 @@ class AutoTonnel:
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
-            "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+            "user-agent": "Mozilla/5.0"
         }
         self.url = "https://gifts2.tonnel.network"
 
@@ -135,7 +135,7 @@ class AutoTonnel:
         if not self.init_data:
             await self.data()
 
-        resp = self.scraper.post(f"{self.url}/api/balance/info", json={"user_auth": self.init_data, "ref": ""}, headers=self.headers)
+        resp = self.scraper.post(f"{self.url}/api/balance/info", json={"authData": self.init_data, "ref": ""}, headers=self.headers)
 
         return resp.json()
     
@@ -149,6 +149,11 @@ class AutoTonnel:
                    "price": price, "timestamp": timestamp,
                    "wtf": self.gen_wtf(timestamp)}
 
-        resp = self.scraper.post(f"https://gifts.coffin.meme/api/buyGift/{gift_id}", json=payload, headers=self.headers)
+        if premarket:
+            type = "buyGiftPreMarket"
+        else:
+            type = "buyGift"
+
+        resp = self.scraper.post(f"https://gifts.coffin.meme/api/{type}/{gift_id}", json=payload, headers=self.headers)
 
         return resp.json()
