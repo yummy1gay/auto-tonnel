@@ -34,7 +34,7 @@ print(gifts)
 
 ```python
 buy = await tonnel.buy_gift(gift_id=1488, price=100, asset="TON")  # Gift ID and price are retrieved from get_gifts()
-premarket = await tonnel.buy_gift(gift_id=1337, price=69, asset="TON", pemarket=True) # If the gift is from premarket
+premarket = await tonnel.buy_gift(gift_id=1337, price=69, asset="TON", premarket=True) # If the gift is from premarket
 print(buy, premarket)
 ```
 *Note: API prices do not include fees. The final cost is approximately 10% higher.*
